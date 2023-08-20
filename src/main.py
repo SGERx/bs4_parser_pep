@@ -8,9 +8,10 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import BASE_DIR, MAIN_DOC_URL
+from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEP_RESULT,
+                       PEP_URL)
 from outputs import control_output
-from utils import get_response, find_tag
+from utils import find_tag, get_response
 
 
 def whats_new(session):
@@ -38,7 +39,7 @@ def whats_new(session):
     sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
 
     # Инициализируйте пустой список results.
-    results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
+    results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
         version_link = urljoin(whats_new_url, version_a_tag['href'])
@@ -137,10 +138,60 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
+def pep(session):
+    response = get_response(session, PEP_URL)
+    if response is None:
+        return None
+    soup = BeautifulSoup(response.text, 'lxml')
+    results = PEP_RESULT
+    pep_count = 0
+    pep_status_count = {}
+    section = find_tag(soup, 'section', attrs={'id': 'numerical-index'})
+    tbody_tag = find_tag(section, 'tbody')
+    tr_tags = tbody_tag.find_all('tr')
+
+    for tr_tag in tqdm(tr_tags, desc='Парсинг PEP'):
+        td_tag = find_tag(tr_tag, 'td')
+        pep_status_main_td = td_tag.text[1:]
+        a_tag = find_tag(tr_tag, 'a')
+        href = a_tag['href']
+        pep_link = urljoin(PEP_URL, href)
+        tr_response = get_response(session, pep_link)
+        if tr_response is None:
+            return None
+
+        tr_soup = BeautifulSoup(tr_response.text, 'lxml')
+
+        dt_tags = tr_soup.find_all('dt')
+
+        for dt_tag in dt_tags:
+            if dt_tag.text == 'Status:':
+                pep_count += 1
+                pep_status = dt_tag.find_next_sibling().string
+                if pep_status in pep_status_count:
+                    pep_status_count[pep_status] = pep_status_count[
+                        pep_status]+1
+                if pep_status not in pep_status_count:
+                    pep_status_count[pep_status] = 1
+                if pep_status not in EXPECTED_STATUS[pep_status_main_td]:
+                    error_msg = (
+                        'Несовпадающие статусы:\n'
+                        f'{pep_link}\n'
+                        f'Статус в картрочке {pep_status}\n'
+                        f'Ожидаемые статусы: {EXPECTED_STATUS[pep_status_main_td]}'
+                    )
+                    logging.warning(error_msg)
+    for pep_status in pep_status_count:
+        results.append((pep_status, pep_status_count[pep_status]))
+    results.append(('Total', pep_count))
+    return results
+
+
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
+    'pep': pep,
 }
 
 
