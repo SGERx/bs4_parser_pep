@@ -30,13 +30,14 @@ def whats_new(session):
     # main_div = soup.find('section', attrs={'id': 'what-s-new-in-python'})
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
 
-    # Шаг 2-й: поиск внутри main_div следующего тега div с классом toctree-wrapper.
+    # Шаг 2-й: поиск внутри main_div следующего тега div
     # Здесь тоже нужен только первый элемент, используется метод find().
     # div_with_ul = main_div.find('div', attrs={'class': 'toctree-wrapper'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
-    # Шаг 3-й: поиск внутри div_with_ul всех элементов списка li с классом toctree-l1.
+    # Шаг 3-й: поиск внутри div_with_ul всех элементов списка li
     # Нужны все теги, поэтому используется метод find_all().
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all('li',
+                                              attrs={'class': 'toctree-l1'})
 
     # Инициализируйте пустой список results.
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
@@ -47,7 +48,6 @@ def whats_new(session):
         # response.encoding = 'utf-8'
         response = get_response(session, version_link)
         if response is None:
-            # Если страница не загрузится, программа перейдёт к следующей ссылке.
             continue
         soup = BeautifulSoup(response.text, 'lxml')
         # h1 = soup.find('h1')
@@ -96,9 +96,9 @@ def latest_versions(session):
             # Если строка соответствует паттерну,
             # переменным присываивается содержимое групп, начиная с первой.
             version, status = text_match.groups()
-        else:  
+        else:
             # Если строка не соответствует паттерну,
-            # первой переменной присваивается весь текст, второй — пустая строка.
+            # первой переменной присваивается весь текст
             version, status = a_tag.text, ''
         # Добавление полученных переменных в список в виде кортежа.
         results.append(
@@ -125,10 +125,11 @@ def download(session):
     # table_tag = main_tag.find('table', {'class': 'docutils'})
     table_tag = find_tag(main_tag, 'table', {'class': 'docutils'})
     # pdf_a4_tag = table_tag.find('a', {'href': re.compile(r'.+pdf-a4\.zip$')})
-    pdf_a4_tag = find_tag(table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
+    pdf_a4_tag = find_tag(
+        table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
-    filename = archive_url.split('/')[-1] 
+    filename = archive_url.split('/')[-1]
     downloads_dir = BASE_DIR / 'downloads'
     downloads_dir.mkdir(exist_ok=True)
     archive_path = downloads_dir / filename
@@ -178,7 +179,8 @@ def pep(session):
                         'Несовпадающие статусы:\n'
                         f'{pep_link}\n'
                         f'Статус в картрочке {pep_status}\n'
-                        f'Ожидаемые статусы: {EXPECTED_STATUS[pep_status_main_td]}'
+                        f'Ожидаемые статусы:'
+                        f'{EXPECTED_STATUS[pep_status_main_td]}'
                     )
                     logging.warning(error_msg)
     for pep_status in pep_status_count:
