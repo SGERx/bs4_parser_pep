@@ -133,7 +133,8 @@ def pep(session):
                 pep_count += 1
                 pep_status = dt_tag.find_next_sibling().string
                 if pep_status in EXPECTED_STATUS[pep_status_main_td]:
-                    pep_status_count[pep_status] = pep_status_count[pep_status]+1
+                    pep_status_count[pep_status] = pep_status_count[
+                        pep_status]+1
                 else:
                     error_msg = (
                             'Несовпадающие статусы:\n'
