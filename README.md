@@ -46,12 +46,12 @@ python main.py [вариант парсера] [аргументы]
 ```
 
 ### Режимы работы
-Сброр ссылок на статьи о нововведениях в Python:
+Сбор ссылок на статьи о нововведениях в Python:
 
 ```bash
 python main.py whats-new
 ```
-Сброр информации о версиях Python:
+Сбор информации о версиях Python:
 
 ```bash
 python main.py latest-versions
